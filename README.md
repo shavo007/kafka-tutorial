@@ -1,0 +1,85 @@
+# kafka tutorial
+
+## Steps
+
+`docker-compose up -d`
+
+```bash
+#~/.confluent/java.config
+# Kafka
+bootstrap.servers=localhost:9092
+
+# Confluent Schema Registry
+schema.registry.url=http://localhost:8081
+```
+
+### Create a topic
+
+```bash
+docker exec broker \
+kafka-topics --bootstrap-server broker:9092 \
+             --create \
+             --topic quickstart
+
+```
+
+### Producer example
+
+```bash
+cd kotlin
+./gradlew runApp -PmainClass="io.confluent.examples.clients.cloud.ProducerExample"      -PconfigPath="$HOME/.confluent/java.config"      -Ptopic="test1"
+```
+
+### Consumer example
+
+```bash
+./gradlew runApp -PmainClass="io.confluent.examples.clients.cloud.ConsumerExample"\
+     -PconfigPath="$HOME/.confluent/java.config"\
+     -Ptopic="test1"
+```
+
+### Streams example
+
+```bash
+./gradlew runApp -PmainClass="io.confluent.examples.clients.cloud.StreamsExample" \
+     -PconfigPath="$HOME/.confluent/java.config" \
+     -Ptopic="test1"
+```
+
+## kafka without zookeeper and schema registry
+
+https://docs.confluent.io/platform/current/tutorials/build-your-own-demos.html#kraft
+https://docs.confluent.io/platform/current/schema-registry/schema_registry_onprem_tutorial.html
+
+```bash
+git clone https://github.com/confluentinc/cp-all-in-one.git
+cd cp-all-in-one/cp-all-in-one-kraft
+git checkout 6.2.0-post
+
+#local file
+docker-compose -f docker-compose-kraft.yaml up  -d
+
+```
+
+## Avro example and schema registry
+
+```bash
+#producer
+cd avro
+mvn exec:java -Dexec.mainClass=io.confluent.examples.clients.basicavro.ProducerExample \
+  -Dexec.args="$HOME/.confluent/java.config"
+
+#view latest schema
+curl --silent -X GET http://localhost:8081/subjects/transactions-value/versions/latest | jq .
+curl --silent -X GET http://localhost:8081/schemas/ids/1 | jq .
+
+#consumer
+mvn exec:java -Dexec.mainClass=io.confluent.examples.clients.basicavro.ConsumerExample \
+  -Dexec.args="$HOME/.confluent/java.config"
+
+```
+
+## Resources
+
+- <https://docs.confluent.io/platform/current/tutorials/examples/clients/docs/kotlin.html>
+- <https://www.confluent.io/learn/kafka-tutorial/>
