@@ -79,6 +79,36 @@ mvn exec:java -Dexec.mainClass=io.confluent.examples.clients.basicavro.ConsumerE
 
 ```
 
+### Schema evolution and compatability
+
+```bash
+#checking backwards compatiability with the latest registered schema for payments
+
+mvn -Dmaven.wagon.http.ssl.insecure=true io.confluent:kafka-schema-registry-maven-plugin:test-compatibility
+#you will get an error due to new field region
+[ERROR] Schema kafka-tutorial/avro/src/main/resources/avro/io/confluent/examples/clients/basicavro/Payment2a.avsc is not compatible with subject(transactions-value) with error [Incompatibility{type:READER_FIELD_MISSING_DEFAULT_VALUE, location:/fields/2, message:region, reader:{"type":"record","name":"Payment","namespace":"io.confluent.examples.clients.basicavro","fields":[{"name":"id","type":"string"},{"name":"amount","type":"double"},{"name":"region","type":"string"}]}, writer:{"type":"record","name":"Payment","namespace":"io.confluent.examples.clients.basicavro","fields":[{"name":"id","type":"string"},{"name":"amount","type":"double"}]}}]
+```
+
+Now register the new version of schema with default value for field `region`
+
+```bash
+curl -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+  --data '{"schema": "{\"type\":\"record\",\"name\":\"Payment\",\"namespace\":\"io.confluent.examples.clients.basicavro\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"amount\",\"type\":\"double\"},{\"name\":\"region\",\"type\":\"string\",\"default\":\"\"}]}"}' \
+  http://localhost:8081/subjects/transactions-value/versions
+
+  #view the latest subject
+  curl --silent -X GET http://localhost:8081/subjects/transactions-value/versions/latest | jq .
+
+  #get global compatiability type
+  curl --silent -X GET http://localhost:8081/config | jq .
+
+  curl -X PUT -H "Content-Type: application/vnd.schemaregistry.v1+json" \
+       --data '{"compatibility": "BACKWARD_TRANSITIVE"}' \
+       http://localhost:8081/config/transactions-value
+
+curl --silent -X GET http://localhost:8081/config/transactions-value | jq .
+```
+
 ## Resources
 
 - <https://docs.confluent.io/platform/current/tutorials/examples/clients/docs/kotlin.html>
