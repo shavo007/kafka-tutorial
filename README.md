@@ -113,6 +113,7 @@ curl --silent -X GET http://localhost:8081/config/transactions-value | jq .
 
 - <https://docs.confluent.io/platform/current/tutorials/examples/clients/docs/kotlin.html>
 - <https://www.confluent.io/learn/kafka-tutorial/>
+- <https://www.asyncapi.com/blog/openapi-vs-asyncapi-burning-questions>
 
 ## TODO
 

@@ -1,0 +1,68 @@
+asyncapi: '2.0.0'
+id: 'urn:io.confluent.examples.payment'
+info:
+  title: Payment Avro API
+  version: 0.1.2
+  description: Sample AsyncAPI for user signedup events defined using Avro
+  contact:
+    name: Shane Lee
+    url: https://github.com/shavo007
+    email: x@gmail.com
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+defaultContentType: application/json
+tags:
+  - name: payment
+servers:
+    production:
+      url: broker.mycompany.com
+      protocol: kafka
+      description: This is "My Company" broker.
+channels:
+  transactions:
+    description: The topic on which user signed up events may be consumed
+    subscribe:
+      summary: Receive informations about payments
+      description: Hello
+      operationId: receivedPayment
+      message:
+        description: An event describing that a user just signed up.
+        bindings:
+          kafka:
+            key:
+              type: string
+              description: id of the payment
+        # traits:
+          # - $ref: '#/components/messageTraits/commonHeaders'
+        # headers:
+        #   type: object
+        #   properties:
+        #     sentAt:
+        #       type: string
+        #       format: date-time
+        #       description: Date and time when the event was sent
+        contentType: avro/binary
+        schemaFormat: application/vnd.apache.avro+yaml;version=1.9.0
+        payload:
+          $ref: './Payment.avsc'
+        examples:
+          - payment:
+              summary: Example payment
+              payload: |-
+                {"id": "100", "amount": 100}
+# components:
+  # messageTraits:
+  #   commonHeaders:
+  #     headers:
+  #       type: object
+  #       properties:
+  #         my-app-header:
+  #           type: integer
+  #           minimum: 0
+  #           maximum: 100
+  #     examples:
+  #       laurent:
+  #         my-app-header: 21
+  #       yacine:
+  #         my-app-header: 22
