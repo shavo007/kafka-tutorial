@@ -113,3 +113,10 @@ curl --silent -X GET http://localhost:8081/config/transactions-value | jq .
 
 - <https://docs.confluent.io/platform/current/tutorials/examples/clients/docs/kotlin.html>
 - <https://www.confluent.io/learn/kafka-tutorial/>
+
+## TODO
+
+- async API example
+- linting async API via spectral
+- microcks and async API https://microcks.io/blog/async-features-with-docker-compose/
+- https://microcks.io/documentation/guides/avro-messaging/
