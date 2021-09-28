@@ -42,7 +42,7 @@ channels:
         #       type: string
         #       format: date-time
         #       description: Date and time when the event was sent
-        contentType: avro/binary
+        contentType: REGISTRY
         schemaFormat: application/vnd.apache.avro+yaml;version=1.9.0
         payload:
           $ref: './Payment.avsc'
