@@ -43,7 +43,7 @@ channels:
         #       format: date-time
         #       description: Date and time when the event was sent
         contentType: avro/binary
-        schemaFormat: application/vnd.apache.avro+yaml;version=1.9.0
+        schemaFormat: application/vnd.apache.avro+json;version=1.9.0
         payload:
           $ref: './Payment.avsc'
         examples:
