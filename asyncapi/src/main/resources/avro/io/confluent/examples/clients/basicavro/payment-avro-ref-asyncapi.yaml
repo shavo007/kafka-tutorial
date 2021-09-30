@@ -50,7 +50,7 @@ channels:
           - payment:
               summary: Example payment
               payload: |-
-                {"id": "100", "amount": 100}
+                {"id": "{{randomString(32)}}", "amount": {{randomInt(25, 50)}}}
 # components:
   # messageTraits:
   #   commonHeaders:
