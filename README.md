@@ -84,7 +84,7 @@ mvn exec:java -Dexec.mainClass=io.confluent.examples.clients.basicavro.ConsumerE
 ```bash
 #checking backwards compatiability with the latest registered schema for payments
 
-mvn -Dmaven.wagon.http.ssl.insecure=true io.confluent:kafka-schema-registry-maven-plugin:test-compatibility
+mvn io.confluent:kafka-schema-registry-maven-plugin:test-compatibility
 #you will get an error due to new field region
 [ERROR] Schema kafka-tutorial/avro/src/main/resources/avro/io/confluent/examples/clients/basicavro/Payment2a.avsc is not compatible with subject(transactions-value) with error [Incompatibility{type:READER_FIELD_MISSING_DEFAULT_VALUE, location:/fields/2, message:region, reader:{"type":"record","name":"Payment","namespace":"io.confluent.examples.clients.basicavro","fields":[{"name":"id","type":"string"},{"name":"amount","type":"double"},{"name":"region","type":"string"}]}, writer:{"type":"record","name":"Payment","namespace":"io.confluent.examples.clients.basicavro","fields":[{"name":"id","type":"string"},{"name":"amount","type":"double"}]}}]
 ```
