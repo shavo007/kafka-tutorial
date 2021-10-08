@@ -1,5 +1,13 @@
 # kafka tutorial
 
+```bash
+├── asyncapi #async api example with microcks
+├── avro #avro schema consumer/producer example with schema registry
+├── connect #connect with multiple examples
+├── kotlin #kotlin producer/consumer example
+└── streams #streams examples (basic/serdes/ktable)
+```
+
 ## Steps
 
 `docker-compose up -d`
@@ -117,7 +125,6 @@ curl --silent -X GET http://localhost:8081/config/transactions-value | jq .
 
 ## TODO
 
-- async API example
 - linting async API via spectral
 - microcks and async API https://microcks.io/blog/async-features-with-docker-compose/
 - https://microcks.io/documentation/guides/avro-messaging/
