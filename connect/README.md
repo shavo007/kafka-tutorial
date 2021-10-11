@@ -60,7 +60,44 @@ kcat -b localhost:9092 -t my-topic -s value=avro -r http://localhost:8081
 
 ![Image of Graph](./graph.svg)
 
-## TODO
+## Debezium
 
-example with sink connector and neo4j
-example with cdc and postgres for src connector
+```bash
+mysql -h 0.0.0.0 -uroot -pdebezium
+use inventory;
+show tables;
+SELECT * from customers;
+
+#After the connector is registered, it will start monitoring the database server’s binlog and it will generate change events for each row that changes.
+curl -X POST http://localhost:8083/connectors \
+  -H 'Content-Type:application/json' \
+  -H 'Accept:application/json' \
+  -d @mysql-inventory.json
+curl -s  http://localhost:8083/connectors | jq '.'
+curl -s http://localhost:8083/connector-plugins | jq '.'
+
+kcat -L -b localhost:9092 | grep dbserver
+kcat -b localhost:9092 -t dbserver1.inventory.customers
+
+curl -s -XDELETE "http://localhost:8083/connectors/inventory-connector"
+
+```
+
+### Topics
+
+dbserver1
+The schema change topic to which all of the DDL statements are written.
+
+dbserver1.inventory.products
+Captures change events for the products table in the inventory database.
+
+dbserver1.inventory.products_on_hand
+Captures change events for the products_on_hand table in the inventory database.
+
+dbserver1.inventory.customers
+Captures change events for the customers table in the inventory database.
+
+dbserver1.inventory.orders
+Captures change events for the orders table in the inventory database.
+
+## TODO

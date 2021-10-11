@@ -1,18 +1,18 @@
 ---
 version: '2'
 services:
-  neo4j:
-    image: neo4j:4.0.3
-    hostname: neo4j
-    container_name: neo4j
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    environment:
-      NEO4J_kafka_zookeeper_connect: zookeeper:2181
-      NEO4J_kafka_bootstrap_servers: broker:9092
-      NEO4J_AUTH: neo4j/connect
-      NEO4J_dbms_memory_heap_max__size: 8G
+  # neo4j:
+  #   image: neo4j:4.0.3
+  #   hostname: neo4j
+  #   container_name: neo4j
+  #   ports:
+  #     - "7474:7474"
+  #     - "7687:7687"
+  #   environment:
+  #     NEO4J_kafka_zookeeper_connect: zookeeper:2181
+  #     NEO4J_kafka_bootstrap_servers: broker:9092
+  #     NEO4J_AUTH: neo4j/connect
+  #     NEO4J_dbms_memory_heap_max__size: 8G
   zookeeper:
     image: confluentinc/cp-zookeeper:6.2.1
     hostname: zookeeper
@@ -71,6 +71,7 @@ services:
       - "8083:8083"
     environment:
       CONNECT_BOOTSTRAP_SERVERS: 'broker:29092'
+      CONNECT_TOPIC_CREATION_ENABLE: 'true'
       CONNECT_REST_ADVERTISED_HOST_NAME: connect
       CONNECT_REST_PORT: 8083
       CONNECT_GROUP_ID: compose-connect-group
@@ -91,6 +92,7 @@ services:
       - -c
       - |
         confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.9
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:latest
         /etc/confluent/docker/run
 
   ksqldb-server:
@@ -162,3 +164,13 @@ services:
       KAFKA_REST_BOOTSTRAP_SERVERS: 'broker:29092'
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
       KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+  mysql:
+    image: debezium/example-mysql:1.7
+    hostname: mysql
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: debezium
+      MYSQL_USER: mysqluser
+      MYSQL_PASSWORD: mysqlpw
+    ports:
+      - 3306:3306
