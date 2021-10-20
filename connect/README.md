@@ -220,3 +220,8 @@ curl -X GET http://localhost:8081/subjects/dbserver1.inventory.customers-value/v
 [kafka connect and serdes explained](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/)
 
 [Debezium and avro](https://debezium.io/blog/2016/09/19/Serializing-Debezium-events-with-Avro/)
+
+
+## TODO
+
+s3 connector and minio
