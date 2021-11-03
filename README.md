@@ -5,8 +5,11 @@
 ├── avro #avro schema consumer/producer example with schema registry
 ├── connect #connect with multiple examples
 ├── kotlin #kotlin producer/consumer example
+└── ksqldb #database for stream processing apps
 └── streams #streams examples (basic/serdes/ktable)
 ```
+
+![The San Juan Mountains are beautiful!](/assets/images/ksqldb-kafka-streams-core-kafka-stack.png)
 
 ## Steps
 
