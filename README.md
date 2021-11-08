@@ -41,6 +41,16 @@ cd kotlin
 ./gradlew runApp -PmainClass="io.confluent.examples.clients.cloud.ProducerExample"      -PconfigPath="$HOME/.confluent/java.config"      -Ptopic="test1"
 ```
 
+```bash
+kcat -b localhost:9092 -t test1 -C \
+  -f '\nKey (%K bytes): %k
+  Value (%S bytes): %s
+  Timestamp: %T
+  Partition: %p
+  Offset: %o
+  Headers: %h\n'
+```
+
 ### Consumer example
 
 ```bash
