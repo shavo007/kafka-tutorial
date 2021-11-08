@@ -4,6 +4,11 @@ Imagine that you work at a financial services company which clears many credit c
 
 This tutorial shows how to create an event-driven microservice that identifies suspicious activity and notifies customers. It demonstrates finding anomalies with ksqlDB and sending alert emails using a simple Kafka consumer with SendGrid.
 
+Access control center at http://localhost:9021/ to run the queries.
+
+<img width="1663" alt="ksql" src="https://user-images.githubusercontent.com/5466825/140831051-f03766e3-6863-482f-9dbf-ec428daab43f.png">
+
+
 ```bash
 #create stream
 CREATE STREAM transactions (
