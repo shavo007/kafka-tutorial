@@ -70,3 +70,36 @@ curl --silent -X GET http://localhost:8081/schemas/ids/1 | jq .
 
 kcat -b localhost:9092 -t sr-input -s value=avro -r http://localhost:8081
 ```
+
+### Conversations
+
+> Give me the unread conversations for a subscriber
+
+This exercise demonstrates an aggregated count of conversations (both sent and read) of a simulated stream of messages. You'll see the incoming records
+on the console along with the aggregation results:
+
+```bash
+docker-compose exec broker kafka-topics --delete --bootstrap-server broker:9092 --topic dummy
+./gradlew runStreams -Pargs=interactive
+```
+
+```text
+#filtered into two grouped streams by event type
+
+
+Outgoing record - key 1 value {"id":1,"timeSent":1637213704235,"eventType":"MESSAGE_SENT","orderTotal":200,"productName":"tayto"}
+Outgoing record - key 1 value {"id":1,"timeSent":1637214604235,"eventType":"MESSAGE_SENT","orderTotal":200,"productName":"moro"}
+Outgoing record - key 1 value {"id":1,"timeSent":1637215504235,"eventType":"MESSAGE_SENT","orderTotal":200,"productName":"tesla"}
+Outgoing record - key 1 value {"id":1,"timeSent":1637216404235,"eventType":"MESSAGE_READ","orderTotal":200,"productName":"tesla"}
+Outgoing record - key 1 value {"id":1,"timeSent":1637217304235,"eventType":"MESSAGE_READ","orderTotal":200,"productName":"moro"}
+```
+
+```text
+#Interactive query
+message sent count for subscriber 1: 3
+message read count for subscriber 1: 2
+message unread count for subscriber 1 is: 1
+```
+
+[Interactive queries](https://www.youtube.com/watch?v=fVDdY36Wk3w&t=4s)
+[Interactive queries demo](https://github.com/confluentinc/kafka-streams-examples/tree/7.0.0-post/src/main/java/io/confluent/examples/streams/interactivequeries)

@@ -138,6 +138,7 @@ SELECT * FROM possible_anomalies EMIT CHANGES;
 
 #view schema
 curl --silent http://localhost:8081/subjects/possible_anomalies-value/versions/latest | jq '.'
+curl --silent http://localhost:8081/subjects/transactions-value/versions/latest | jq '.'
 ```
 
 ## Microservice app
