@@ -94,7 +94,7 @@ services:
         confluent-hub install --no-prompt neo4j/kafka-connect-neo4j:1.0.9
         confluent-hub install --no-prompt debezium/debezium-connector-mysql:latest
         /etc/confluent/docker/run
-        
+
   control-center:
     image: confluentinc/cp-enterprise-control-center:6.2.1
     hostname: control-center
@@ -150,27 +150,27 @@ services:
     entrypoint: /bin/sh
     tty: true
 
-  ksql-datagen:
-    image: confluentinc/ksqldb-examples:6.2.1
-    hostname: ksql-datagen
-    container_name: ksql-datagen
-    depends_on:
-      - ksqldb-server
-      - broker
-      - schema-registry
-      - connect
-    command: "bash -c 'echo Waiting for Kafka to be ready... && \
-                       cub kafka-ready -b broker:29092 1 40 && \
-                       echo Waiting for Confluent Schema Registry to be ready... && \
-                       cub sr-ready schema-registry 8081 40 && \
-                       echo Waiting a few seconds for topic creation to finish... && \
-                       sleep 11 && \
-                       tail -f /dev/null'"
-    environment:
-      KSQL_CONFIG_DIR: "/etc/ksql"
-      STREAMS_BOOTSTRAP_SERVERS: broker:29092
-      STREAMS_SCHEMA_REGISTRY_HOST: schema-registry
-      STREAMS_SCHEMA_REGISTRY_PORT: 8081
+  # ksql-datagen:
+  #   image: confluentinc/ksqldb-examples:6.2.1
+  #   hostname: ksql-datagen
+  #   container_name: ksql-datagen
+  #   depends_on:
+  #     - ksqldb-server
+  #     - broker
+  #     - schema-registry
+  #     - connect
+  #   command: "bash -c 'echo Waiting for Kafka to be ready... && \
+  #                      cub kafka-ready -b broker:29092 1 40 && \
+  #                      echo Waiting for Confluent Schema Registry to be ready... && \
+  #                      cub sr-ready schema-registry 8081 40 && \
+  #                      echo Waiting a few seconds for topic creation to finish... && \
+  #                      sleep 11 && \
+  #                      tail -f /dev/null'"
+  #   environment:
+  #     KSQL_CONFIG_DIR: "/etc/ksql"
+  #     STREAMS_BOOTSTRAP_SERVERS: broker:29092
+  #     STREAMS_SCHEMA_REGISTRY_HOST: schema-registry
+  #     STREAMS_SCHEMA_REGISTRY_PORT: 8081
 
   rest-proxy:
     image: confluentinc/cp-kafka-rest:6.2.1
@@ -186,13 +186,13 @@ services:
       KAFKA_REST_BOOTSTRAP_SERVERS: 'broker:29092'
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
       KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
-  mysql:
-    image: debezium/example-mysql:1.7
-    hostname: mysql
-    container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: debezium
-      MYSQL_USER: mysqluser
-      MYSQL_PASSWORD: mysqlpw
-    ports:
-      - 3306:3306
+  # mysql:
+  #   image: debezium/example-mysql:1.7
+  #   hostname: mysql
+  #   container_name: mysql
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: debezium
+  #     MYSQL_USER: mysqluser
+  #     MYSQL_PASSWORD: mysqlpw
+  #   ports:
+  #     - 3306:3306

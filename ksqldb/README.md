@@ -213,10 +213,10 @@ FROM MOVEMENTS GROUP BY PERSON EMIT CHANGES;
 
 CREATE TABLE PERSON_STATS AS
 SELECT PERSON,
-		LATEST_BY_OFFSET(LOCATION) AS LATEST_LOCATION,
-		COUNT(*) AS LOCATION_CHANGES,
-		COUNT_DISTINCT(LOCATION) AS UNIQUE_LOCATIONS
-	FROM MOVEMENTS
+    LATEST_BY_OFFSET(LOCATION) AS LATEST_LOCATION,
+    COUNT(*) AS LOCATION_CHANGES,
+    COUNT_DISTINCT(LOCATION) AS UNIQUE_LOCATIONS
+  FROM MOVEMENTS
 GROUP BY PERSON
 EMIT CHANGES;
 
@@ -299,5 +299,110 @@ CREATE STREAM filtered
 FROM stream3 EMIT CHANGES;
 
 SELECT * FROM filtered EMIT CHANGES;
+
+```
+
+### Custom timestamp
+
+> Because ksqlDB defaults to using the timestamp metadata of the underlying Kafka records, you need to tell ksqlDB where to find the timestamp attribute within the events. This is called using event-time.
+
+#### Using event time
+
+>Using event-time allows ksqlDB to handle out-of-order events during time-related processing. Set the timestamp property when creating a stream or table to denote which column to use as the timestamp.
+
+```bash
+CREATE STREAM s1 (
+    k VARCHAR KEY,
+    ts VARCHAR,
+    v1 INT,
+    v2 VARCHAR
+) WITH (
+    kafka_topic = 's1',
+    partitions = 1,
+    value_format = 'avro'
+);
+
+# insert some rows that are not "now"
+INSERT INTO s1 (
+    k, ts, v1, v2
+) VALUES (
+    'k1', '2020-05-04 01:00:00', 0, 'a'
+);
+
+INSERT INTO s1 (
+    k, ts, v1, v2
+) VALUES (
+    'k2', '2020-05-04 02:00:00', 1, 'b'
+);
+
+#Query the stream for its columns, including ROWTIME. ROWTIME is a system-column that ksqlDB reserves to track the timestamp of the event.
+
+SELECT k,
+       ROWTIME,
+       TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss.SSS') AS rowtime_formatted,
+       ts,
+       v1,
+       v2
+FROM s1
+EMIT CHANGES;
+
+#Because you didn't yet instruct ksqlDB to use event-time, ROWTIME is inherited from the underlying Kafka record. Kafka's default is to set the timestamp at which the record was produced to the topic.
+{
+  "K": "k2",
+  "ROWTIME": 1637542882518,
+  "ROWTIME_FORMATTED": "2021-11-22 01:01:22.518",
+  "TS": "2020-05-04 02:00:00",
+  "V1": 1,
+  "V2": "b"
+}
+
+#Derive a new stream, s2, from s1 and tell ksqlDB to use event-time. Set the timestamp property to the ts column.
+
+CREATE STREAM S2 WITH (
+    timestamp = 'ts',
+    timestamp_format = 'yyyy-MM-dd HH:mm:ss'
+)   AS
+    SELECT *
+    FROM s1
+    EMIT CHANGES;
+
+DESCRIBE S2;
+
+#Now compare the timestamps again. This time, notice that ROWTIME has been set to the same value as ts. s2 is now using event-time.
+
+SELECT k,
+       ROWTIME,
+       TIMESTAMPTOSTRING(ROWTIME, 'yyyy-MM-dd HH:mm:ss.SSS') AS rowtime_formatted,
+       ts,
+       v1,
+       v2
+FROM s2
+EMIT CHANGES;
+
+{
+  "K": "k2",
+  "ROWTIME": 1588557600000,
+  "ROWTIME_FORMATTED": "2020-05-04 02:00:00.000",
+  "TS": "2020-05-04 02:00:00",
+  "V1": 1,
+  "V2": "b"
+}
+
+#Any new streams or tables derived from s2 will continue to have their timestamp set to ts unless an operation instructs otherwise.
+
+#you can also set it on base ones, too. Simply set the timestamp and timestamp_format properties on the WITH clause.
+CREATE STREAM s3 (
+    k VARCHAR KEY,
+    ts VARCHAR,
+    v1 INT
+) WITH (
+    kafka_topic = 's3',
+    partitions = 1,
+    value_format = 'avro',
+    timestamp = 'ts',
+    timestamp_format = 'yyyy-MM-dd HH:mm:ss'
+);
+
+#Note that the underlying timestamp metadata for the Kafka records in topic s3 are not modified. ksqlDB has merely marked that any derived streams or tables from s3 should use the value of ts for ROWTIME.
 
 ```
