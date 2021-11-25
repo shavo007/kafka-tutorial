@@ -20,6 +20,7 @@ docker exec -it ksqldb-cli sh
 ksql http://ksqldb-server:8088
 show streams;
 SET 'auto.offset.reset' = 'earliest';
+DESCRIBE MOVEMENTS EXTENDED;
 SELECT * FROM MOVEMENTS EMIT CHANGES;
 
 #create a table PERSON_STATS
@@ -71,6 +72,8 @@ kcat -b localhost:9092 -t NY_ORDERS
 ## Lookup and join
 
 ```bash
+DROP STREAM ny_orders  DELETE TOPIC;
+DROP STREAM  orders DELETE TOPIC;
 CREATE TABLE items (id VARCHAR PRIMARY KEY, make VARCHAR, model VARCHAR, unit_price DOUBLE)
 WITH (KAFKA_TOPIC='items', VALUE_FORMAT='avro', PARTITIONS=1);
 
@@ -97,6 +100,9 @@ INSERT INTO orders VALUES (1620508354284, 73, 'item_3', 4);
 
 #query the enriched stream
 SELECT * FROM orders_enriched EMIT CHANGES;
+
+INSERT INTO items VALUES('item_3', 'Spalding', 'TF-150', 29.99);
+INSERT INTO orders VALUES (1620508354284, 73, 'item_3', 4);
 ```
 
 ## Transforming data
@@ -305,6 +311,17 @@ SELECT * FROM filtered EMIT CHANGES;
 ### Custom timestamp
 
 > Because ksqlDB defaults to using the timestamp metadata of the underlying Kafka records, you need to tell ksqlDB where to find the timestamp attribute within the events. This is called using event-time.
+
+```bash
+kcat -b localhost:9092 -t orders -C -s value=avro -r http://localhost:8081 \
+  -f '\nKey (%K bytes): %k
+  Value (%S bytes): %s
+  Timestamp: %T
+  Partition: %p
+  Offset: %o
+  Headers: %h\n'
+
+```
 
 #### Using event time
 

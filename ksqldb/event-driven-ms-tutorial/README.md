@@ -135,6 +135,9 @@ CREATE TABLE possible_anomalies WITH (
     EMIT CHANGES;
 
 SELECT * FROM possible_anomalies EMIT CHANGES;
+PRINT 'possible_anomalies' FROM BEGINNING;
+
+kcat -b localhost:9092 -t possible_anomalies -s value=avro -r http://localhost:8081
 
 #view schema
 curl --silent http://localhost:8081/subjects/possible_anomalies-value/versions/latest | jq '.'
@@ -157,6 +160,8 @@ curl --silent http://localhost:8081/subjects/transactions-value/versions/latest 
 ./mvnw exec:java -Dexec.mainClass="io.ksqldb.tutorial.EmailSender" #run the class
 #insert in some transactions again and view the emails sent out
 ```
+
+Finally, note that `ksqlDB` emits a new event every time a tumbling window changes. ksqlDB uses a model called "refinements" to continually emit new changes to stateful aggregations. For example, if an anomaly was detected because three credit card transactions were found in a given interval, an event would be emitted from the table. If a fourth is detected in the same interval, another event is emitted. Because SendGrid does not (at the time of writing) support idempotent email submission, you would need to have a small piece of logic in your program to prevent sending an email multiple times for the same period. This is omitted for brevity.
 
 ![You got mail!](../../assets/images/mailInbox.png)
 
