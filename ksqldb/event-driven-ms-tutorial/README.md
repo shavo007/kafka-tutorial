@@ -8,7 +8,6 @@ Access control center at http://localhost:9021/ to run the queries.
 
 <img width="1663" alt="ksql" src="https://user-images.githubusercontent.com/5466825/140831051-f03766e3-6863-482f-9dbf-ec428daab43f.png">
 
-
 ```bash
 #create stream
 CREATE STREAM transactions (
@@ -115,6 +114,36 @@ INSERT INTO transactions (
     150.00
 );
 
+#Pt1 select query (group by card number)
+    SELECT card_number AS `card_number_key`,
+           as_value(card_number) AS `card_number`,
+           latest_by_offset(email_address) AS `email_address`,
+           count(*) AS `n_attempts`,
+           sum(amount) AS `total_amount`,
+           collect_list(tx_id) AS `tx_ids`
+    FROM transactions
+    GROUP BY card_number EMIT CHANGES;
+
+#Pt2 tumbling window (every 30 secs) and where the count is >= 3
+    SELECT card_number AS `card_number_key`,
+           as_value(card_number) AS `card_number`,
+           latest_by_offset(email_address) AS `email_address`,
+           count(*) AS `n_attempts`,
+           sum(amount) AS `total_amount`,
+           collect_list(tx_id) AS `tx_ids`,
+          WINDOWSTART as `start_boundary`,
+           WINDOWEND as `end_boundary`
+    FROM transactions
+    WINDOW TUMBLING (SIZE 30 SECONDS, RETENTION 1000 DAYS)
+    GROUP BY card_number
+    HAVING count(*) >= 3 EMIT CHANGES;
+
+# pt3.
+#Now create the table
+
+#By default, ksqlDB-registered schemas have the same name (KsqlDataSourceSchema) and the same namespace (io.confluent.ksql.avro_schemas). You can override this behavior by providing a VALUE_AVRO_SCHEMA_FULL_NAME.
+
+
 #aggregate using a table
 CREATE TABLE possible_anomalies WITH (
     kafka_topic = 'possible_anomalies',
@@ -146,7 +175,7 @@ curl --silent http://localhost:8081/subjects/transactions-value/versions/latest 
 
 ## Microservice app
 
->Instead of sendgrid lets use mailcatcher
+> Instead of sendgrid lets use mailcatcher
 
 ```bash
  docker run -d -p 1080:1080 -p 1025:1025 --name mailcatcher schickling/mailcatcher
@@ -164,6 +193,126 @@ curl --silent http://localhost:8081/subjects/transactions-value/versions/latest 
 Finally, note that `ksqlDB` emits a new event every time a tumbling window changes. ksqlDB uses a model called "refinements" to continually emit new changes to stateful aggregations. For example, if an anomaly was detected because three credit card transactions were found in a given interval, an event would be emitted from the table. If a fourth is detected in the same interval, another event is emitted. Because SendGrid does not (at the time of writing) support idempotent email submission, you would need to have a small piece of logic in your program to prevent sending an email multiple times for the same period. This is omitted for brevity.
 
 ![You got mail!](../../assets/images/mailInbox.png)
+
+## Topology visualiser
+
+You can then visualise the processor topology by explaining the query and copying to <https://zz85.github.io/kafka-streams-viz/>
+
+```sql
+show queries;
+explain CTAS_POSSIBLE_ANOMALIES_27;
+```
+
+Example:
+
+```text
+Topologies:
+   Sub-topology: 0
+    Source: KSTREAM-SOURCE-0000000000 (topics: [transactions])
+      --> KSTREAM-TRANSFORMVALUES-0000000001
+    Processor: KSTREAM-TRANSFORMVALUES-0000000001 (stores: [])
+      --> Aggregate-Prepare
+      <-- KSTREAM-SOURCE-0000000000
+    Processor: Aggregate-Prepare (stores: [])
+      --> KSTREAM-FILTER-0000000003
+      <-- KSTREAM-TRANSFORMVALUES-0000000001
+    Processor: KSTREAM-FILTER-0000000003 (stores: [])
+      --> Aggregate-GroupBy
+      <-- Aggregate-Prepare
+    Processor: Aggregate-GroupBy (stores: [])
+      --> Aggregate-GroupBy-repartition-filter
+      <-- KSTREAM-FILTER-0000000003
+    Processor: Aggregate-GroupBy-repartition-filter (stores: [])
+      --> Aggregate-GroupBy-repartition-sink
+      <-- Aggregate-GroupBy
+    Sink: Aggregate-GroupBy-repartition-sink (topic: Aggregate-GroupBy-repartition)
+      <-- Aggregate-GroupBy-repartition-filter
+
+  Sub-topology: 1
+    Source: Aggregate-GroupBy-repartition-source (topics: [Aggregate-GroupBy-repartition])
+      --> KSTREAM-AGGREGATE-0000000005
+    Processor: KSTREAM-AGGREGATE-0000000005 (stores: [Aggregate-Aggregate-Materialize])
+      --> Aggregate-Aggregate-ToOutputSchema
+      <-- Aggregate-GroupBy-repartition-source
+    Processor: Aggregate-Aggregate-ToOutputSchema (stores: [])
+      --> Aggregate-Aggregate-WindowSelect
+      <-- KSTREAM-AGGREGATE-0000000005
+    Processor: Aggregate-Aggregate-WindowSelect (stores: [])
+      --> Aggregate-HavingFilter-ApplyPredicate
+      <-- Aggregate-Aggregate-ToOutputSchema
+    Processor: Aggregate-HavingFilter-ApplyPredicate (stores: [])
+      --> Aggregate-HavingFilter-Filter
+      <-- Aggregate-Aggregate-WindowSelect
+    Processor: Aggregate-HavingFilter-Filter (stores: [])
+      --> Aggregate-HavingFilter-PostProcess
+      <-- Aggregate-HavingFilter-ApplyPredicate
+    Processor: Aggregate-HavingFilter-PostProcess (stores: [])
+      --> Aggregate-Project
+      <-- Aggregate-HavingFilter-Filter
+    Processor: Aggregate-Project (stores: [])
+      --> KTABLE-TOSTREAM-0000000015
+      <-- Aggregate-HavingFilter-PostProcess
+    Processor: KTABLE-TOSTREAM-0000000015 (stores: [])
+      --> KSTREAM-SINK-0000000016
+      <-- Aggregate-Project
+    Sink: KSTREAM-SINK-0000000016 (topic: possible_anomalies)
+      <-- KTABLE-TOSTREAM-0000000015Topologies:
+   Sub-topology: 0
+    Source: KSTREAM-SOURCE-0000000000 (topics: [transactions])
+      --> KSTREAM-TRANSFORMVALUES-0000000001
+    Processor: KSTREAM-TRANSFORMVALUES-0000000001 (stores: [])
+      --> Aggregate-Prepare
+      <-- KSTREAM-SOURCE-0000000000
+    Processor: Aggregate-Prepare (stores: [])
+      --> KSTREAM-FILTER-0000000003
+      <-- KSTREAM-TRANSFORMVALUES-0000000001
+    Processor: KSTREAM-FILTER-0000000003 (stores: [])
+      --> Aggregate-GroupBy
+      <-- Aggregate-Prepare
+    Processor: Aggregate-GroupBy (stores: [])
+      --> Aggregate-GroupBy-repartition-filter
+      <-- KSTREAM-FILTER-0000000003
+    Processor: Aggregate-GroupBy-repartition-filter (stores: [])
+      --> Aggregate-GroupBy-repartition-sink
+      <-- Aggregate-GroupBy
+    Sink: Aggregate-GroupBy-repartition-sink (topic: Aggregate-GroupBy-repartition)
+      <-- Aggregate-GroupBy-repartition-filter
+
+  Sub-topology: 1
+    Source: Aggregate-GroupBy-repartition-source (topics: [Aggregate-GroupBy-repartition])
+      --> KSTREAM-AGGREGATE-0000000005
+    Processor: KSTREAM-AGGREGATE-0000000005 (stores: [Aggregate-Aggregate-Materialize])
+      --> Aggregate-Aggregate-ToOutputSchema
+      <-- Aggregate-GroupBy-repartition-source
+    Processor: Aggregate-Aggregate-ToOutputSchema (stores: [])
+      --> Aggregate-Aggregate-WindowSelect
+      <-- KSTREAM-AGGREGATE-0000000005
+    Processor: Aggregate-Aggregate-WindowSelect (stores: [])
+      --> Aggregate-HavingFilter-ApplyPredicate
+      <-- Aggregate-Aggregate-ToOutputSchema
+    Processor: Aggregate-HavingFilter-ApplyPredicate (stores: [])
+      --> Aggregate-HavingFilter-Filter
+      <-- Aggregate-Aggregate-WindowSelect
+    Processor: Aggregate-HavingFilter-Filter (stores: [])
+      --> Aggregate-HavingFilter-PostProcess
+      <-- Aggregate-HavingFilter-ApplyPredicate
+    Processor: Aggregate-HavingFilter-PostProcess (stores: [])
+      --> Aggregate-Project
+      <-- Aggregate-HavingFilter-Filter
+    Processor: Aggregate-Project (stores: [])
+      --> KTABLE-TOSTREAM-0000000015
+      <-- Aggregate-HavingFilter-PostProcess
+    Processor: KTABLE-TOSTREAM-0000000015 (stores: [])
+      --> KSTREAM-SINK-0000000016
+      <-- Aggregate-Project
+    Sink: KSTREAM-SINK-0000000016 (topic: possible_anomalies)
+      <-- KTABLE-TOSTREAM-0000000015
+
+```
+
+Sketch:
+
+![Topology](../../assets/images/anomalyKsqlTopology.png)
 
 ## Resources
 
