@@ -114,6 +114,18 @@ INSERT INTO transactions (
     150.00
 );
 
+# Problem statement: 
+# Create a materialised view (`aggregated stream`) of anomalies by customer (card_number) within a window of 30 secs 
+# from transactions stream where the number of attempts is >= 3.
+
+
+
+
+
+
+
+
+
 #Pt1 select query (group by card number)
     SELECT card_number AS `card_number_key`,
            as_value(card_number) AS `card_number`,
